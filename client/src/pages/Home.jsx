@@ -10,7 +10,10 @@ const Home = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:3000/holders/9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump');
+        const baseUrl = import.meta.env.VITE_BACKEND;
+        const fullUrl = `${baseUrl}/holders/9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump`;
+        console.log('Fetching from:', fullUrl); // Debug
+        const response = await axios.get(fullUrl);
         setHomedata(response.data.homedata);
         setLoading(false);
       } catch (error) {
@@ -85,7 +88,7 @@ const Home = () => {
                 <td className="px-4 py-3 border-b border-gray-700 text-sm">{item.percentage.toFixed(2)}%</td>
                 <td className="px-4 py-3 border-b border-gray-700 text-sm">
                   <a
-                    href={`http://localhost:5173/transactions/${item.tokenAccount}`}
+                    href={`/transactions/${item.tokenAccount}`}
                     className="text-indigo-400 hover:text-indigo-600 transition-colors"
                     target="_blank"
                     rel="noopener noreferrer"

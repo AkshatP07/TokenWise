@@ -31,9 +31,10 @@ const Transactions = () => {
       }).toString();
 
       try {
-        const res = await fetch(
-          `http://localhost:3000/transactions/${tokenAccount}?${query}`
-        );
+        const baseUrl = import.meta.env.VITE_BACKEND;
+        const fullUrl = `${baseUrl}/transactions/${tokenAccount}?${query}`;
+        console.log('Fetching from:', fullUrl); // Debug
+        const res = await fetch(fullUrl);
         if (res.ok) {
           const data = await res.json();
           setTransactions(data);
