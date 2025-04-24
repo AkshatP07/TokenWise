@@ -25,7 +25,7 @@ Run both development servers locally
 bash
 Copy
 Edit
-git clone https://github.com/your-username/fartcoin-tracker.git
+git clone https://github.com/your-username/TokenWise.git
 cd fartcoin-tracker
 
 cd client
