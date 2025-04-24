@@ -1,0 +1,140 @@
+import React, { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { Toaster, toast } from "react-hot-toast";
+import * as XLSX from "xlsx";
+import { ClipLoader } from "react-spinners";
+
+const Transactions = () => {
+  const { tokenAccount } = useParams();
+  const [searchParams] = useSearchParams();
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // This hook is triggered whenever the tokenAccount or searchParams change
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+
+      const query = new URLSearchParams({
+        type: searchParams.get("type") || "", // Default to empty string if no param
+        protocol: searchParams.get("protocol") || "",
+        signature: searchParams.get("signature") || "",
+        start: searchParams.get("start") || "",
+        end: searchParams.get("end") || "",
+      }).toString();
+
+      try {
+        const res = await fetch(
+          `http://localhost:3000/transactions/${tokenAccount}?${query}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setTransactions(data);
+        } else {
+          console.error("Failed to fetch transactions");
+        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Fetch transactions if tokenAccount is available
+    if (tokenAccount) {
+      fetchTransactions();
+    }
+  }, [tokenAccount, searchParams]); // Trigger on tokenAccount or searchParams change
+
+  // Function to export data to CSV
+  const exportToCSV = () => {
+    if (transactions.length === 0) {
+      toast.error("No transactions to export", {
+        style: {
+          background: "#1f2937",
+          color: "#ffffff",
+          border: "1px solid #4b5563",
+        },
+      });
+      return;
+    }
+    const cleanData = transactions.map(({ signature, timestamp, type, amount, protocol }) => ({
+      signature,
+      timestamp: new Date(timestamp).toLocaleString(),
+      type,
+      amount,
+      protocol,
+    }));
+    const ws = XLSX.utils.json_to_sheet(cleanData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Transactions");
+    XLSX.writeFile(wb, `transactions_${tokenAccount}.xlsx`);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard!", {
+      style: {
+        background: "#1f2937",
+        color: "#ffffff",
+        border: "1px solid #4b5563",
+      },
+    });
+  };
+
+  const truncate = (str) => str.slice(0, 5) + "..." + str.slice(-5);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-900">
+        <ClipLoader color="#6366f1" size={50} />
+      </div>
+    );
+  }
+  
+
+  return (
+    <div className="p-6 bg-gray-900 text-white min-h-screen">
+      <h2 className="text-3xl font-bold mb-2 text-indigo-400 text-center">Transactions for Fartcoin token</h2>
+      <h3 className="text-sl font-bold mb-6 text-indigo-400 text-center cursor-pointer hover:text-indigo-500 transition-colors" onClick={() => copyToClipboard('9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump')} >9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump</h3>
+      <button
+        onClick={exportToCSV}
+        className="bg-indigo-500 text-white p-2 rounded-lg mb-4 hover:bg-indigo-400 transition"
+      >
+        Export to Excel
+      </button>
+      <div className="overflow-x-auto">
+        <table className="w-full bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+          <thead className="bg-gray-700 text-gray-300">
+            <tr>
+              <th className="px-4 py-3 border-b border-gray-700 text-left text-sm font-semibold">Signature</th>
+              <th className="px-4 py-3 border-b border-gray-700 text-left text-sm font-semibold">Timestamp</th>
+              <th className="px-4 py-3 border-b border-gray-700 text-left text-sm font-semibold">Type</th>
+              <th className="px-4 py-3 border-b border-gray-700 text-left text-sm font-semibold">Amount</th>
+              <th className="px-4 py-3 border-b border-gray-700 text-left text-sm font-semibold">Protocol</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((tx) => (
+              <tr key={tx.signature} className="hover:bg-gray-700 transition-colors">
+                <td
+                  className="px-4 py-3 border-b border-gray-700 text-sm text-indigo-300 cursor-pointer hover:text-indigo-500 transition-colors"
+                  onClick={() => copyToClipboard(tx.signature)}
+                >
+                  {truncate(tx.signature)}
+                </td>
+                <td className="px-4 py-3 border-b border-gray-700 text-sm">{new Date(tx.timestamp).toLocaleString()}</td>
+                <td className="px-4 py-3 border-b border-gray-700 text-sm">{tx.type}</td>
+                <td className="px-4 py-3 border-b border-gray-700 text-sm">{tx.amount}</td>
+                <td className="px-4 py-3 border-b border-gray-700 text-sm">{tx.protocol}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Toaster />
+    </div>
+  );
+};
+
+export default Transactions;
